@@ -1,18 +1,16 @@
-projeto:
-  titulo: "Gerenciador de Mercado com Interface Gráfica"
-  descricao: |
-    Projeto de Estudo para Gerenciamento de Banco de Dados.
 
-    Este projeto foi desenvolvido como parte dos estudos acadêmicos em **banco de dados** e **desenvolvimento de software**. Ele é uma aplicação desktop em **Python**, utilizando as bibliotecas **Tkinter** e **SQLAlchemy**, com o objetivo de gerenciar dados de um mercado, como **clientes**, **produtos**, **pedidos** e **fornecedores**.
+# 🛒 Gerenciador de Mercado com Interface Gráfica  
+**Projeto de Estudo para Gerenciamento de Banco de Dados**  
 
-    Além de realizar operações CRUD, o projeto também explora conceitos fundamentais como:
-      - Álgebra Relacional para consultas dinâmicas.
-      - Controle de Acesso para diferentes níveis de usuários.
-      - Gerenciamento de Transações para garantir a integridade dos dados.
+## 📖 Sobre o Projeto  
+Este projeto foi desenvolvido como parte dos estudos acadêmicos em **banco de dados** e **desenvolvimento de software**. Ele é uma aplicação desktop em **Python**, utilizando as bibliotecas **Tkinter** e **SQLAlchemy**, com o objetivo de gerenciar dados de um mercado, como **clientes**, **produtos**, **pedidos** e **fornecedores**.  
 
-    Este projeto é exclusivamente educacional, buscando consolidar práticas e habilidades essenciais em desenvolvimento e gerenciamento de banco de dados.
+Além de realizar operações CRUD, o projeto também explora conceitos fundamentais como:  
+- **Álgebra Relacional** para consultas dinâmicas.  
+- **Controle de Acesso** para diferentes níveis de usuários.  
+- **Gerenciamento de Transações** para garantir a integridade dos dados.  
 
-
+Este projeto é **exclusivamente educacional**, buscando consolidar práticas e habilidades essenciais em **desenvolvimento e gerenciamento de banco de dados**.
 ## 🔧 Funcionalidades  
 - 📋 **CRUD Completo**: Criar, Ler, Atualizar e Deletar dados no banco de dados.  
 - 🕵️‍♂️ **Consultas Dinâmicas**: Executar consultas personalizadas usando álgebra relacional.  
