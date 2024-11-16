@@ -1,10 +1,14 @@
-from PyQt5.QtWidgets import QFormLayout, QDialog, QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QTabWidget, QMessageBox, QScrollArea, QHBoxLayout
+from PyQt5.QtWidgets import QFormLayout, QDialog, QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QTabWidget, QMessageBox, QScrollArea, QHBoxLayout, QComboBox
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy import text
+
+# Variável global com os valores permitidos para a role
+ROLES_PERMITIDAS = ["admin", "gerente", "funcionario"]
 
 # Configuração do banco de dados com SQLAlchemy para MariaDB
 username = 'root'
-password = '1234'
+password = ''
 host = 'localhost'
 port = '3306'
 database = 'mercado_gui'
@@ -52,6 +56,15 @@ class Funcionario(Base):
     email = Column(String(50))
     telefone = Column(String(50))
 
+# Modelo Usuario
+class Usuario(Base):
+    __tablename__ = 'usuarios'
+    id = Column(Integer, primary_key=True)
+    nome = Column(String(50))
+    email = Column(String(50))
+    senha = Column(String(50))
+    role = Column(String(50)) # 'admin, 'gerente', 'funcionario'
+
 # -------------------------------------------------------
 
 # Criando a base do banco
@@ -62,21 +75,83 @@ class MercadoGui(QWidget):
     
     def __init__(self):
         super().__init__()
+        self.current_user = None
         self.initUI()
     
     def initUI(self):
         self.setWindowTitle("Mercado Gui")
 
         layout = QVBoxLayout()
-        tab_widget = QTabWidget()
+        self.tab_widget = QTabWidget()
 
-        tab_widget.addTab(self.create_cliente_tab(), "Cliente")
-        tab_widget.addTab(self.create_produto_tab(), "Produto")
-        tab_widget.addTab(self.create_fornecedor_tab(), "Fornecedor")
-        tab_widget.addTab(self.create_funcionario_tab(), "Funcionário")
+        # Abas:
+        self.tab_widget.addTab(self.create_login_tab(), "Login")
+        self.tab_widget.addTab(self.create_cliente_tab(), "Cliente")
+        self.tab_widget.addTab(self.create_produto_tab(), "Produto")
+        self.tab_widget.addTab(self.create_fornecedor_tab(), "Fornecedor")
+        self.tab_widget.addTab(self.create_funcionario_tab(), "Funcionário")
+        self.tab_widget.addTab(self.create_usuario_tab(), "Usuário")
+        # A aba de consulta SQL será adicionada, mas desabilitada inicialmente
+        self.query_tab = self.create_query_tab()
+        self.tab_widget.addTab(self.query_tab, "Consulta SQL")
 
-        layout.addWidget(tab_widget)
+        # Desabilitar a aba de consulta SQL inicialmente
+        self.tab_widget.setTabEnabled(self.tab_widget.indexOf(self.query_tab), False)
+
+        layout.addWidget(self.tab_widget)
         self.setLayout(layout)
+
+    # --------------- LOGIN ----------------
+    def login(self, nome, senha):
+        user = session.query(Usuario).filter_by(nome=nome, senha=senha).first()
+        if user:
+            if user.role not in ROLES_PERMITIDAS:
+                QMessageBox.warning(self, "Erro", "Usuário com role inválida! Contate o administrador.")
+            else:
+                self.current_user = user.role
+                QMessageBox.information(self, "Sucesso", f"Bem-vindo, {user.nome}!")
+                # Habilitar a aba de consulta SQL após o login
+                self.tab_widget.setTabEnabled(self.tab_widget.indexOf(self.query_tab), True)
+                # Mudar para a aba de consulta SQL (ou qualquer outra aba desejada)
+                self.tab_widget.setCurrentIndex(self.tab_widget.indexOf(self.query_tab))
+        else:
+            QMessageBox.warning(self, "Erro", "Usuário ou senha incorretos!")
+
+    # Verificar permissões antes de executar ações:
+    def check_permission(self, role):
+        if self.current_user != role:
+            QMessageBox.warning(self, "Erro", "Você não tem permissão para executar esta ação!")
+            return False
+        return True
+    
+    # --------------- Controle de Gerenciamento de Transações ----------------
+    def transactional_operation(self):
+        try:
+            session.begin()  # Inicia a transação
+            session.commit()  # Commit da transação
+            QMessageBox.information(self, "Sucesso", "Operação realizada com sucesso!")
+        except Exception as e:
+            session.rollback()  # Rollback em caso de erro
+            QMessageBox.warning(self, "Erro", f"Erro ao executar operação: {e}")
+
+# --------------- LOGIN ------------------
+    def create_login_tab(self):
+        login_widget = QWidget()
+        layout = QFormLayout()
+
+        self.nome_login_input = QLineEdit()
+        self.senha_login_input = QLineEdit()
+        self.senha_login_input.setEchoMode(QLineEdit.Password)
+
+        layout.addRow("Nome do Usuário:", self.nome_login_input)
+        layout.addRow("Senha do Usuário:", self.senha_login_input)
+
+        self.login_btn = QPushButton("Login")
+        self.login_btn.clicked.connect(lambda: self.login(self.nome_login_input.text(), self.senha_login_input.text()))
+
+        layout.addRow(self.login_btn)
+        login_widget.setLayout(layout)
+        return login_widget
 
 # --------------- CLIENTE ----------------
     def create_cliente_tab(self):
@@ -233,9 +308,52 @@ class MercadoGui(QWidget):
 
         Funcionario_widget.setLayout(layout)
         return Funcionario_widget
+    
+
+# ----------------- USUARIOS ----------------
+
+    def create_usuario_tab(self):
+        Usuario_widget = QWidget()
+        layout = QFormLayout()
+
+        # Campo de textos:
+        self.nome_usuario_input = QLineEdit()
+        self.email_usuario_input = QLineEdit()
+        self.senha_usuario_input = QLineEdit()
+        self.role_usuario_input = QComboBox()
+        self.role_usuario_input.addItems(ROLES_PERMITIDAS)
+
+        layout.addRow("Nome do Usuário:", self.nome_usuario_input)
+        layout.addRow("Email do Usuário:", self.email_usuario_input)
+        layout.addRow("Senha do Usuário:", self.senha_usuario_input)
+        layout.addRow("Role do Usuário:", self.role_usuario_input)
+
+
+        # Botões CRUD
+        btn_layout = QHBoxLayout()
+        self.create_usuario_btn = QPushButton('Criar Usuário')
+        self.read_usuario_btn = QPushButton('Ler Usuários')
+        self.update_usuario_btn = QPushButton('Atualizar Usuário')
+        self.delete_usuario_btn = QPushButton('Deletar Usuário')
+
+        # Adicionando widgets ao layout
+        btn_layout.addWidget(self.create_usuario_btn)
+        btn_layout.addWidget(self.read_usuario_btn)
+        btn_layout.addWidget(self.update_usuario_btn)
+        btn_layout.addWidget(self.delete_usuario_btn)
+
+        layout.addRow(btn_layout)
+
+        # Conectar os botões às funções CRUD
+        self.create_usuario_btn.clicked.connect(self.create_usuario)
+        self.read_usuario_btn.clicked.connect(self.read_usuarios)
+        self.update_usuario_btn.clicked.connect(self.update_usuario)
+        self.delete_usuario_btn.clicked.connect(self.delete_usuario)
+
+        Usuario_widget.setLayout(layout)
+        return Usuario_widget
 
 # ----------------- FUNÇÕES CLIENTE CRUD -----------------
-
     def create_cliente(self):
         nome = self.nome_input.text()
         email = self.email_input.text()
@@ -586,11 +704,212 @@ class MercadoGui(QWidget):
         else:
             QMessageBox.warning(self, "Erro", "Funcionário não encontrado!")
 
+# ----------------- FUNÇÕES USUARIO CRUD -----------------
+
+    def create_usuario(self):
+        nome = self.nome_usuario_input.text()
+        email = self.email_usuario_input.text()
+        senha = self.senha_usuario_input.text()
+        role = self.role_usuario_input.currentText()  
+
+        # Verifica se todos os campos estão preenchidos
+        if nome and email and senha:
+            novo_usuario = Usuario(nome=nome, email=email, senha=senha, role=role)
+            session.add(novo_usuario)
+            session.commit()
+            QMessageBox.information(self, "Sucesso", "Usuário criado com sucesso!")
+        else:
+            QMessageBox.warning(self, "Erro", "Todos os campos devem ser preenchidos!")
+
+    def read_usuarios(self):
+        usuarios = session.query(Usuario).all()
+        if usuarios:
+            usuario_info = "\n".join([f"ID: {usuario.id}, Nome: {usuario.nome}, Email: {usuario.email}, Role: {usuario.role}" for usuario in usuarios])
+            QMessageBox.information(self, "Usuários", usuario_info)
+        else:
+            QMessageBox.warning(self, "Erro", "Nenhum usuário encontrado!")
+
+    def update_usuario(self):
+        id_dialog = QDialog()
+        id_dialog.setWindowTitle('Atualizar Usuário')
+
+        layout = QVBoxLayout()
+
+        id_label = QLabel("ID do Usuário:")
+        self.id_input_usuario = QLineEdit()
+
+        layout.addWidget(id_label)
+        layout.addWidget(self.id_input_usuario)
+
+        confirm_btn = QPushButton('Confirmar')
+        confirm_btn.clicked.connect(lambda: self.perform_update_usuario(id_dialog))
+        layout.addWidget(confirm_btn)
+
+        id_dialog.setLayout(layout)
+        id_dialog.exec_()
+
+    def perform_update_usuario(self, dialog):
+        id_usuario = self.id_input_usuario.text()
+        
+        usuario = session.query(Usuario).filter_by(id=id_usuario).first()
+        if usuario:
+            nome = self.nome_usuario_input.text()
+            email = self.email_usuario_input.text()
+            senha = self.senha_usuario_input.text()
+            role = self.role_usuario_input.currentText()  # Alterado para usar currentText()
+
+            # Verifica se os campos estão preenchidos
+            if nome and email and senha:
+                usuario.nome = nome
+                usuario.email = email
+                usuario.senha = senha
+                usuario.role = role
+                session.commit()
+                QMessageBox.information(self, "Sucesso", "Usuário atualizado com sucesso!")
+                dialog.close()
+            else:
+                QMessageBox.warning(self, "Erro", "Todos os campos devem ser preenchidos!")
+        else:
+            QMessageBox.warning(self, "Erro", "Usuário não encontrado!")
+
+    def delete_usuario(self):
+        id_dialog = QDialog()
+        id_dialog.setWindowTitle('Deletar Usuário')
+
+        layout = QVBoxLayout()
+
+        id_label = QLabel("ID do Usuário:")
+        self.id_input_usuario = QLineEdit()
+
+        layout.addWidget(id_label)
+        layout.addWidget(self.id_input_usuario)
+
+        confirm_btn = QPushButton('Confirmar')
+        confirm_btn.clicked.connect(lambda: self.perform_delete_usuario(id_dialog))
+        layout.addWidget(confirm_btn)
+
+        id_dialog.setLayout(layout)
+        id_dialog.exec_()
+
+    def perform_delete_usuario(self, dialog):
+        id_usuario = self.id_input_usuario.text()
+        
+        usuario = session.query(Usuario).filter_by(id=id_usuario).first()
+        if usuario:
+            session.delete(usuario)
+            session.commit()
+            QMessageBox.information(self, "Sucesso", "Usuário deletado com sucesso!")
+            dialog.close()
+        else:
+            QMessageBox.warning(self, "Erro", "Usuário não encontrado!")
+
+
 # ----------------- ÁLGEBRA RELACIONAL -----------------
 
-    
+    # Adicionar aba de consulta SQL após login
+    def create_query_tab(self):
+        query_widget = QWidget()
+        layout = QVBoxLayout()
 
+        # ComboBox para selecionar o tipo de consulta
+        self.query_select = QComboBox()
+        self.query_select.addItem("Selecione uma consulta")
+        self.query_select.addItem("Consulta: Todos os Clientes")
+        self.query_select.addItem("Consulta: Todos os Produtos")
+        self.query_select.addItem("Consulta: Todos os Fornecedores")
+        self.query_select.addItem("Consulta: Clientes por Nome")
+        self.query_select.addItem("Consulta: Produtos em Estoque")
+        self.query_select.addItem("Consulta: Fornecedores por Telefone")
 
+        # ComboBox para o operador (usado para consultas avançadas)
+        self.query_operator = QComboBox()
+        self.query_operator.addItem(">")
+        self.query_operator.addItem("<")
+        self.query_operator.addItem(">=")
+        self.query_operator.addItem("<=")
+        self.query_operator.addItem("=")
+        self.query_operator.addItem("!=")
+
+        # Campo para o nome do campo de pesquisa
+        self.query_field = QComboBox()
+        self.query_field.addItem("quantidade")
+        self.query_field.addItem("preco")
+
+        # Campo para entrada de valor
+        self.query_input = QLineEdit()
+        self.query_input.setPlaceholderText("Digite o valor da pesquisa...")
+
+        # Botão para executar a consulta
+        self.query_btn = QPushButton("Executar Consulta")
+        self.query_btn.clicked.connect(self.execute_query)
+
+        # Campo para mostrar o resultado da consulta
+        self.query_result = QLabel("Resultado da consulta")
+        self.query_result.setWordWrap(True)
+
+        # Adicionando widgets ao layout
+        layout.addWidget(QLabel("Selecione a consulta:"))
+        layout.addWidget(self.query_select)
+        layout.addWidget(QLabel("Escolha o campo (para Produtos em Estoque):"))
+        layout.addWidget(self.query_field)
+        layout.addWidget(QLabel("Escolha o operador (para Produtos em Estoque):"))
+        layout.addWidget(self.query_operator)
+        layout.addWidget(QLabel("Digite o valor para pesquisa:"))
+        layout.addWidget(self.query_input)
+        layout.addWidget(self.query_btn)
+        layout.addWidget(QLabel("Resultado da consulta:"))
+        layout.addWidget(self.query_result)
+
+        query_widget.setLayout(layout)
+        return query_widget
+
+    def execute_query(self):
+        selected_query = self.query_select.currentText()
+
+        # Caso o usuário tenha escolhido uma consulta predefinida
+        try:
+            if selected_query == "Consulta: Todos os Clientes":
+                query = "SELECT * FROM clientes"
+                params = {}
+
+            elif selected_query == "Consulta: Todos os Produtos":
+                query = "SELECT * FROM produtos"
+                params = {}
+
+            elif selected_query == "Consulta: Todos os Fornecedores":
+                query = "SELECT * FROM fornecedores"
+                params = {}
+
+            elif selected_query == "Consulta: Clientes por Nome":
+                query = "SELECT * FROM clientes WHERE nome LIKE :nome"
+                params = {'nome': f"%{self.query_input.text()}%"}
+
+            elif selected_query == "Consulta: Produtos em Estoque":
+                field = self.query_field.currentText()  # Campo: "quantidade" ou "preco"
+                operator = self.query_operator.currentText()  # Operador: ">", "<", etc.
+                value = self.query_input.text()  # Valor digitado pelo usuário
+
+                # Construindo a consulta dinamicamente
+                query = f"SELECT * FROM produtos WHERE {field} {operator} :value"
+                params = {'value': value}
+
+            elif selected_query == "Consulta: Fornecedores por Telefone":
+                query = "SELECT * FROM fornecedores WHERE telefone LIKE :telefone"
+                params = {'telefone': f"%{self.query_input.text()}%"}
+
+            else:
+                self.query_result.setText("Selecione uma consulta válida.")
+                return
+
+            # Executando a consulta
+            result = session.execute(text(query), params).fetchall()
+
+            # Formatando e exibindo o resultado
+            result_str = "\n".join([str(row) for row in result])
+            self.query_result.setText(result_str if result else "Nenhum resultado encontrado.")
+
+        except Exception as e:
+            self.query_result.setText(f"Erro ao executar consulta: {e}")
 # ----------------- COMANDO FINAL -----------------
 if __name__ == '__main__':
     import sys
@@ -598,40 +917,5 @@ if __name__ == '__main__':
     gui = MercadoGui()
     gui.show()
     sys.exit(app.exec_())
-
-# ----------------- SCROLL -----------------
-# class MainWindow(QWidget):
-#     def __init__(self):
-#         super().__init__()
-#         self.initUI()
-
-#     def initUI(self):
-#         self.setWindowTitle("Interface de rolagem")
-#         self.setGeometry(100, 100, 400, 500)
-
-#         scroll_area = QScrollArea(self)
-#         scroll_area.setWidgetResizable(True)
-
-#         ccontent_widget = QWidget()
-#         content_layout = QVBoxLayout(ccontent_widget)
-
-#         for i in range(20):
-#             button = QPushButton(f"Botão {i+1}")
-#             content_layout.addWidget(button)
-
-#         scroll_area.setWidget(ccontent_widget)
-
-#         main_layout = QVBoxLayout(self)
-#         main_layout.addWidget(scroll_area)
-
-#         self.setLayout(main_layout)
-
-# if __name__ == '__main__':
-#     app = QApplication([])
-#     window = MainWindow()
-#     window.show()
-#     app.exec_()
-
-
 
 
