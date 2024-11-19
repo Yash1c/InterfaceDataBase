@@ -41,8 +41,8 @@ Este projeto tem como principal objetivo fortalecer o aprendizado sobre:
 ## 🖥️ Execução do Projeto  
 1. **Clone o Repositório**  
    ```bash
-   git clone https://github.com/seu-usuario/projeto-gerenciador-mercado.git
-   cd projeto-gerenciador-mercado
+   git https://github.com/Yash1c/InterfaceDataBase.git
+   cd InterfaceDataBase
    ```  
 2. **Instale as Dependências**  
    ```bash
@@ -110,8 +110,8 @@ This project aims to strengthen knowledge on:
 ## 🖥️ How to Run the Project  
 1. **Clone the Repository**  
    ```bash
-   git clone https://github.com/your-username/market-manager-project.git
-   cd market-manager-project
+   git https://github.com/Yash1c/InterfaceDataBase.git
+   cd InterfaceDataBase
    ```  
 2. **Install Dependencies**  
    ```bash
