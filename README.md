@@ -133,3 +133,45 @@ This project aims to strengthen knowledge on:
 - It is a study-focused project, aimed at learning and applying theoretical concepts.  
 
 ---
+
+**Atualização do README para incluir suporte ao SQLite (Português e Inglês):**
+
+---
+
+### 🇧🇷 **Para Configurar com SQLite**
+
+O projeto também oferece suporte ao banco de dados SQLite para maior simplicidade durante os testes e aprendizado. Siga os passos abaixo para configurar o projeto utilizando SQLite:
+
+#### 📂 Configuração com SQLite
+1. Certifique-se de ter o SQLite3 instalado no seu sistema.
+2. Atualize o arquivo `main.py` ou `interface.py` substituindo a configuração de banco de dados existente pela seguinte:
+   ```python
+   engine = create_engine('sqlite:///mercado_gui.db')
+   ```
+3. Não é necessário configurar usuário, senha ou host para SQLite.
+
+#### 🖥️ Execução com SQLite
+Após ajustar o código, siga os passos normais de execução:
+```bash
+python main.py
+```
+
+---
+
+### 🇺🇸 **Configuring with SQLite**
+
+The project also supports SQLite for simpler testing and learning purposes. Follow the steps below to set up the project using SQLite:
+
+#### 📂 SQLite Configuration
+1. Ensure SQLite3 is installed on your system.
+2. Update the `main.py` or `interface.py` file, replacing the existing database configuration with:
+   ```python
+   engine = create_engine('sqlite:///mercado_gui.db')
+   ```
+3. There is no need to configure a username, password, or host for SQLite.
+
+#### 🖥️ Running with SQLite
+After adjusting the code, follow the standard execution steps:
+```bash
+python main.py
+```

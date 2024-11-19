@@ -1,3 +1,25 @@
+    # --------------- PARA SQLLITE ----------------
+
+# from PyQt5.QtWidgets import QFormLayout, QDialog, QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QTabWidget, QMessageBox, QScrollArea, QHBoxLayout, QComboBox
+# from sqlalchemy import create_engine, Column, Integer, String
+# from sqlalchemy.orm import sessionmaker, declarative_base
+
+# # Variável global com os valores permitidos para a role
+# ROLES_PERMITIDAS = ["admin", "gerente", "funcionario"]
+
+# # Configuração do banco de dados com SQLAlchemy para SQLite
+# database_path = 'mercado_gui.sqlite'
+# engine = create_engine(f'sqlite:///{database_path}')
+
+# Base = declarative_base()
+# Session = sessionmaker(bind=engine)
+# session = Session()
+
+# # Sincronizando a estrutura das tabelas no banco de dados
+# Base.metadata.create_all(engine)
+
+# -------------------------------------------------
+
 from PyQt5.QtWidgets import QFormLayout, QDialog, QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QTabWidget, QMessageBox, QScrollArea, QHBoxLayout, QComboBox
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker, declarative_base
